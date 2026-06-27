@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>one day at a time</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --border:#30363d;--border2:#21262d;
+  --blue:#38bdf8;--blue-dim:#0c2233;--blue-light:#7dd3fc;
+  --green:#34d399;--green-dim:#063320;--green-light:#6ee7b7;
+  --red:#e05252;--red-dim:#2d1212;--red-light:#f08080;
+  --rose:#c9517a;--rose-light:#f0a0be;
+  --lilac:#7c3aed;--lilac-light:#b794f4;--lilac-dim:#1e1035;
+  --teal-light:#4fd1c5;--amber-light:#fbbf5a;
+  --radius:6px;--radius-lg:12px;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;min-height:100vh}
+#app{padding:20px 16px 48px;max-width:430px;margin:0 auto}
+
+.header{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border2);text-align:center}
+.title{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-.02em}
+.subtitle{font-size:12px;color:var(--lilac-light);margin-top:4px;font-family:'Space Mono',monospace;letter-spacing:.06em}
+.goal-badge{display:inline-block;background:var(--lilac-dim);color:var(--lilac-light);border:1px solid var(--lilac);font-size:11px;font-family:'Space Mono',monospace;padding:4px 10px;border-radius:20px;margin-top:10px}
+
+.progress-section{margin-bottom:20px}
+.progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.progress-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-family:'Space Mono',monospace}
+.progress-pct{font-family:'Space Mono',monospace;font-size:12px;color:var(--lilac-light)}
+.progress-bar-bg{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#0e9a8a,var(--lilac-light));border-radius:3px;transition:width .5s ease}
+.progress-markers{display:flex;justify-content:space-between;margin-top:5px}
+.progress-marker{font-size:10px;color:var(--text3);font-family:'Space Mono',monospace}
+
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px}
+.section-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--lilac-light);margin-bottom:12px;font-family:'Space Mono',monospace}
+
+.log-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.log-row input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none;transition:border-color .2s}
+.log-row input:focus{border-color:var(--lilac-light)}
+.log-row input::placeholder{color:var(--text3)}
+.btn{background:var(--lilac);color:#fff;border:none;border-radius:var(--radius);padding:6px 14px;font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:12px;cursor:pointer;white-space:nowrap}
+.btn:active{opacity:.8}
+
+/* zoom */
+.zoom-btns{display:flex;gap:6px;margin-bottom:10px}
+.zoom-btn{flex:1;padding:5px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text3);font-family:'Space Mono',monospace;font-size:10px;cursor:pointer;text-align:center}
+.zoom-btn.active{background:var(--lilac-dim);border-color:var(--lilac);color:var(--lilac-light)}
+
+/* trend */
+#trendCanvas{display:block;width:100%;border-radius:4px}
+
+/* weekly averages */
+.week-avg-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)}
+.week-avg-row:last-child{border-bottom:none}
+.week-avg-lbl{font-size:11px;color:var(--text3);font-family:'Space Mono',monospace}
+.week-avg-sub{font-size:9px;color:var(--text3);font-family:'Space Mono',monospace;margin-top:2px}
+.week-avg-right{display:flex;align-items:center;gap:8px}
+.week-avg-delta{font-size:10px;font-family:'Space Mono',monospace}
+.week-avg-val{font-size:13px;font-weight:600;font-family:'Space Mono',monospace;color:var(--text)}
+
+/* calorie grid */
+#cal-grid{display:grid;grid-template-columns:repeat(28,1fr);grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:2px;width:100%;aspect-ratio:28/7}
+.cal-cell{border-radius:2px;cursor:pointer;transition:opacity .12s}
+.cal-cell.empty{background:transparent;cursor:default;pointer-events:none}
+.cal-cell.future{background:var(--bg3)}
+.cal-cell.unset{background:var(--bg4)}
+.cal-cell.blue{background:var(--blue)}
+.cal-cell.green{background:var(--green)}
+.cal-cell.red{background:var(--red)}
+.cal-cell.today-ring{box-shadow:0 0 0 2px var(--rose-light)}
+.cal-cell:active{opacity:.6}
+
+.cal-legend{display:flex;gap:14px;margin-top:12px}
+.cal-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace}
+.cal-dot{width:10px;height:10px;border-radius:2px}
+.cal-dot.blue{background:var(--blue)}
+.cal-dot.green{background:var(--green)}
+.cal-dot.red{background:var(--red)}
+
+/* calorie logger */
+.cal-log-row{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.colour-btns{display:flex;gap:6px;flex-shrink:0}
+.colour-btn{width:26px;height:26px;border-radius:var(--radius);border:2px solid transparent;cursor:pointer;flex-shrink:0}
+.colour-btn.sel{border-color:#fff}
+.colour-btn.c-blue{background:var(--blue)}
+.colour-btn.c-green{background:var(--green)}
+.colour-btn.c-red{background:var(--red)}
+
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border);padding:9px 18px;border-radius:20px;font-size:12px;color:var(--lilac-light);opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;z-index:999;font-family:'Space Mono',monospace}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div id="app">
+
+  <div class="header">
+    <div class="title">one day at a time</div>
+    <div class="subtitle">june — december 2026</div>
+    <div class="goal-badge">goal: 68 kg</div>
+  </div>
+
+  <div style="margin-bottom:16px;text-align:center">
+    <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);font-family:'Space Mono',monospace;margin-bottom:6px">current weight</div>
+    <div style="font-size:32px;font-weight:600;font-family:'Space Mono',monospace;color:var(--text)"><span id="stat-current">—</span> <span style="font-size:16px;color:var(--text3);font-weight:400">kg</span></div>
+  </div>
+
+  <div class="progress-section">
+    <div class="progress-header">
+      <span class="progress-lbl">progress to goal</span>
+      <span class="progress-pct" id="prog-pct">0%</span>
+    </div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-bar" style="width:0%"></div></div>
+    <div class="progress-markers">
+      <span class="progress-marker">76.35</span>
+      <span class="progress-marker">68.00</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">log weight</div>
+    <div class="log-row">
+      <input type="date" id="weight-date" min="2026-06-21" max="2027-01-02">
+    </div>
+    <div class="log-row" style="margin-bottom:0">
+      <input type="number" id="weight-input" placeholder="00.00" step="0.01" min="40" max="200">
+      <button class="btn" onclick="window.logWeight()">log</button>
+    </div>
+    <div id="log-feedback" style="font-size:11px;font-family:'Space Mono',monospace;min-height:14px;margin-top:4px;color:var(--text3)"></div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">weight trend</div>
+    <div class="zoom-btns">
+      <div class="zoom-btn active" id="z7" onclick="window.setZoom(7)">7 days</div>
+      <div class="zoom-btn" id="z30" onclick="window.setZoom(30)">30 days</div>
+      <div class="zoom-btn" id="zAll" onclick="window.setZoom(0)">all time</div>
+    </div>
+    <canvas id="trendCanvas" height="160"></canvas>
+    <div style="display:flex;gap:16px;margin-top:10px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace"><div style="width:18px;height:2px;background:#79b8ff;border-radius:1px"></div>daily</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);font-family:'Space Mono',monospace"><div style="width:18px;height:0;border-top:2px dashed var(--rose-light)"></div>7-day avg</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">weekly averages</div>
+    <div id="week-avg-list"><div style="font-size:11px;color:var(--text3);font-family:'Space Mono',monospace">no data yet</div></div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">calorie balance — 2026</div>
+    <div id="cal-grid"></div>
+    <div class="cal-legend">
+      <div class="cal-legend-item"><div class="cal-dot blue"></div>deficit</div>
+      <div class="cal-legend-item"><div class="cal-dot green"></div>balanced</div>
+      <div class="cal-legend-item"><div class="cal-dot red"></div>surplus</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">log calorie day</div>
+    <div class="cal-log-row">
+      <input type="date" id="cal-date" min="2026-06-21" max="2027-01-02" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 10px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none">
+      <div class="colour-btns">
+        <div class="colour-btn c-blue sel" id="cb-blue" onclick="window.selectColour('blue')"></div>
+        <div class="colour-btn c-green" id="cb-green" onclick="window.selectColour('green')"></div>
+        <div class="colour-btn c-red" id="cb-red" onclick="window.selectColour('red')"></div>
+      </div>
+      <button class="btn" onclick="window.logCalorie()">log</button>
+    </div>
+    <div id="cal-feedback" style="font-size:11px;font-family:'Space Mono',monospace;color:var(--text3);margin-top:4px;min-height:14px"></div>
+  </div>
+
+</div>
+<script>
+var START_W = 76.35;
+var GOAL_W  = 68.00;
+var GRID_START = new Date(2026,5,21);
+var GRID_END   = new Date(2027,0,2);
+var currentZoom = 7;
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function dateKey(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function parseKey(k){ var p=k.split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); }
+function fmtDDMM(d){ return pad(d.getDate())+'/'+pad(d.getMonth()+1); }
+function fmtFull(k){ var d=parseKey(k); return fmtDDMM(d)+'/'+d.getFullYear(); }
+function todayD(){ var d=new Date(); d.setHours(0,0,0,0); return d; }
+
+function loadData(){ try{ return JSON.parse(localStorage.getItem('wt26')||'{}'); }catch(e){ return {}; } }
+function saveData(d){ localStorage.setItem('wt26',JSON.stringify(d)); }
+
+var data=loadData();
+if(!data.weights)  data.weights={};
+if(!data.calories) data.calories={};
+saveData(data);
+
+// Set date inputs to today
+var _todayKey=dateKey(new Date());
+document.getElementById('weight-date').value=_todayKey;
+document.getElementById('cal-date').value=_todayKey;
+
+var selectedColour='blue';
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); },2000);
+}
+
+function setZoom(z){
+  currentZoom=z;
+  document.getElementById('z7').classList.toggle('active',z===7);
+  document.getElementById('z30').classList.toggle('active',z===30);
+  document.getElementById('zAll').classList.toggle('active',z===0);
+  renderTrend(allWeights());
+}
+
+function logWeight(){
+  var inp=document.getElementById('weight-input');
+  var v=parseFloat(inp.value);
+  if(isNaN(v)||v<40||v>200){ showToast('enter a valid weight'); return; }
+  var dateVal=document.getElementById('weight-date').value||_todayKey;
+  data.weights[dateVal]=Math.round(v*100)/100;
+  saveData(data);
+  inp.value='';
+  var fb=document.getElementById('log-feedback');
+  fb.textContent='logged '+v.toFixed(2)+' kg for '+fmtFull(dateVal);
+  fb.style.color='var(--teal-light)';
+  showToast('weight logged \u2713');
+  render();
+}
+
+function selectColour(c){
+  selectedColour=c;
+  ['blue','green','red'].forEach(function(x){
+    document.getElementById('cb-'+x).classList.toggle('sel',x===c);
+  });
+}
+
+function logCalorie(){
+  var dateVal=document.getElementById('cal-date').value;
+  if(!dateVal){ showToast('pick a date first'); return; }
+  data.calories[dateVal]=selectedColour;
+  saveData(data);
+  var fb=document.getElementById('cal-feedback');
+  fb.textContent=fmtFull(dateVal)+' \u2192 '+selectedColour;
+  fb.style.color=selectedColour==='blue'?'var(--blue-light)':selectedColour==='green'?'var(--green-light)':'var(--red-light)';
+  showToast('saved \u2713');
+  renderCalGrid();
+}
+
+function allWeights(){
+  return Object.keys(data.weights).sort().map(function(k){ return {date:parseKey(k),key:k,val:data.weights[k]}; });
+}
+
+function rollingAvg(arr,n){
+  return arr.map(function(_,i){
+    var s=arr.slice(Math.max(0,i-n+1),i+1);
+    return s.reduce(function(a,x){ return a+x; },0)/s.length;
+  });
+}
+
+function render(){
+  var entries=allWeights();
+  var latest=entries.length?entries[entries.length-1].val:null;
+  var pct=latest?Math.max(0,Math.min(100,Math.round((START_W-latest)/(START_W-GOAL_W)*100))):0;
+  document.getElementById('stat-current').textContent=latest?latest.toFixed(2):'\u2014';
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('prog-bar').style.width=pct+'%';
+  renderTrend(entries);
+  renderWeeklyAverages(entries);
+  renderCalGrid();
+}
+
+function renderTrend(entries){
+  var canvas=document.getElementById('trendCanvas');
+  var W=canvas.offsetWidth||340;
+  canvas.width=W*2; canvas.height=320;
+  var ctx=canvas.getContext('2d');
+  ctx.scale(2,2);
+  var cw=W, ch=160;
+  var PAD={top:12,right:24,bottom:36,left:42};
+  var plotW=cw-PAD.left-PAD.right;
+  var plotH=ch-PAD.top-PAD.bottom;
+
+  var weightMap={};
+  entries.forEach(function(e){ weightMap[e.key]=e.val; });
+
+  var today=todayD();
+  var endD=new Date(today); // always end at today
+  var startD;
+  if(currentZoom===0){ startD=new Date(2026,5,21); }
+  else { startD=new Date(today); startD.setDate(today.getDate()-(currentZoom-1)); if(startD<new Date(2026,5,21)) startD=new Date(2026,5,21); }
+
+  var allKeys=[];
+  var cur=new Date(startD);
+  while(cur<=endD){ allKeys.push(dateKey(new Date(cur))); cur.setDate(cur.getDate()+1); }
+
+  var vals=allKeys.map(function(k){ return weightMap[k]!==undefined?weightMap[k]:null; });
+  var lastKnown=START_W;
+  var filled=vals.map(function(v){ if(v!==null) lastKnown=v; return lastKnown; });
+  var avg7=rollingAvg(filled,7);
+  var nonNull=vals.filter(function(v){ return v!==null; });
+
+  if(!nonNull.length){
+    ctx.fillStyle='#6e7681';
+    ctx.font='11px Space Mono,monospace';
+    ctx.textAlign='left';
+    ctx.fillText('log your first weight above',PAD.left,ch/2);
+    return;
+  }
+
+  var mn=Math.min.apply(null,nonNull);
+  var mx=Math.max.apply(null,nonNull);
+  var yMin=Math.floor((mn-0.5)*2)/2;
+  var yMax=Math.ceil((mx+0.5)*2)/2;
+  var yRange=yMax-yMin||1;
+  var n=allKeys.length;
+
+  function xPos(i){ return PAD.left+(i/Math.max(n-1,1))*plotW; }
+  function yPos(v){ return PAD.top+plotH-((v-yMin)/yRange)*plotH; }
+
+  ctx.strokeStyle='#21262d'; ctx.lineWidth=1;
+  ctx.fillStyle='#6e7681'; ctx.font='9px Space Mono,monospace'; ctx.textAlign='right';
+  var step=yRange<=2?0.5:yRange<=4?1:2;
+  var tick=Math.ceil(yMin/step)*step;
+  while(tick<=yMax+0.001){
+    var y=yPos(tick);
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(cw-PAD.right,y); ctx.stroke();
+    ctx.fillText(tick.toFixed(1),PAD.left-4,y+3);
+    tick=Math.round((tick+step)*10)/10;
+  }
+
+  ctx.textAlign='center'; ctx.fillStyle='#6e7681';
+  var xStep=Math.max(1,Math.floor(n/5));
+  for(var i=0;i<n;i+=xStep){
+    ctx.fillText(fmtDDMM(parseKey(allKeys[i])),xPos(i),ch-PAD.bottom+20);
+  }
+
+  ctx.beginPath(); ctx.strokeStyle='#f0a0be'; ctx.lineWidth=2; ctx.setLineDash([5,3]);
+  avg7.forEach(function(v,i){ i===0?ctx.moveTo(xPos(i),yPos(v)):ctx.lineTo(xPos(i),yPos(v)); });
+  ctx.stroke(); ctx.setLineDash([]);
+
+  ctx.beginPath(); ctx.strokeStyle='rgba(121,184,255,0.5)'; ctx.lineWidth=1.5;
+  var started=false;
+  vals.forEach(function(v,i){ if(v===null) return; if(!started){ctx.moveTo(xPos(i),yPos(v));started=true;}else ctx.lineTo(xPos(i),yPos(v)); });
+  ctx.stroke();
+
+  vals.forEach(function(v,i){
+    if(v===null) return;
+    ctx.beginPath(); ctx.arc(xPos(i),yPos(v),3,0,Math.PI*2);
+    ctx.fillStyle='#79b8ff'; ctx.fill();
+    ctx.strokeStyle='#161b22'; ctx.lineWidth=1; ctx.stroke();
+  });
+}
+
+function renderWeeklyAverages(entries){
+  var el=document.getElementById('week-avg-list');
+  if(!entries.length){ el.innerHTML='<div style="font-size:11px;color:var(--text3);font-family:Space Mono,monospace">no data yet</div>'; return; }
+  var weeks={};
+  entries.forEach(function(e){
+    var d=e.date;
+    var sun=new Date(d); sun.setDate(d.getDate()-d.getDay());
+    var wk=dateKey(sun);
+    if(!weeks[wk]) weeks[wk]={vals:[],sun:new Date(sun)};
+    weeks[wk].vals.push(e.val);
+  });
+  var sorted=Object.keys(weeks).sort().reverse();
+  el.innerHTML=sorted.map(function(wk,i){
+    var w=weeks[wk];
+    var avg=Math.round(w.vals.reduce(function(a,b){return a+b;},0)/w.vals.length*100)/100;
+    var sun=w.sun;
+    var sat=new Date(sun); sat.setDate(sun.getDate()+6);
+    var lbl=fmtDDMM(sun)+' \u2013 '+fmtDDMM(sat);
+    var n=w.vals.length;
+    var delta='',dc='';
+    if(i<sorted.length-1){
+      var pw=weeks[sorted[i+1]];
+      var pa=Math.round(pw.vals.reduce(function(a,b){return a+b;},0)/pw.vals.length*100)/100;
+      var diff=Math.round((avg-pa)*100)/100;
+      if(diff<0){delta='\u2193 '+Math.abs(diff).toFixed(2);dc='var(--teal-light)';}
+      else if(diff>0){delta='\u2191 '+diff.toFixed(2);dc='var(--amber-light)';}
+    }
+    return '<div class="week-avg-row">'+
+      '<div><div class="week-avg-lbl">'+lbl+'</div>'+
+      '<div class="week-avg-sub">'+n+' entr'+(n===1?'y':'ies')+'</div></div>'+
+      '<div class="week-avg-right">'+
+      (delta?'<span style="font-size:10px;font-family:Space Mono,monospace;color:'+dc+'">'+delta+'</span>':'')+
+      '<span class="week-avg-val">'+avg.toFixed(2)+'</span>'+
+      '</div></div>';
+  }).join('');
+}
+
+function renderCalGrid(){
+  var grid=document.getElementById('cal-grid');
+  var today=todayD();
+  var todayK=dateKey(today);
+  var TOTAL=28*7;
+  var html='';
+  for(var i=0;i<TOTAL;i++){
+    var d=new Date(GRID_START);
+    d.setDate(GRID_START.getDate()+i);
+    var k=dateKey(d);
+    if(d>GRID_END){ html+='<div class="cal-cell empty"></div>'; continue; }
+    var isFuture=d>today;
+    var st=data.calories[k]||'none';
+    var cls='cal-cell';
+    if(isFuture) cls+=' future';
+    else if(st==='blue') cls+=' blue';
+    else if(st==='green') cls+=' green';
+    else if(st==='red') cls+=' red';
+    else cls+=' unset';
+    if(k===todayK) cls+=' today-ring';
+    html+='<div class="'+cls+'" title="'+fmtDDMM(d)+'"></div>';
+  }
+  grid.innerHTML=html;
+}
+
+render();
+window.logWeight=logWeight;
+window.logCalorie=logCalorie;
+window.selectColour=selectColour;
+window.setZoom=setZoom;
+</script>
+</body>
+</html>
